@@ -5,7 +5,7 @@
   :description "Some niceties on top of slf4j and logback"
   :license {:name "EPL-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
-  :profiles {:dev {:dependencies []
+  :profiles {:dev {:dependencies [[org.clojure/tools.logging "0.4.1"]]
                    :jvm-opts ["-Xverify:none"]
                    :plugins      [[lein-auto "0.1.3"]]
                    :source-paths ["src"]}}
