@@ -391,3 +391,200 @@
       (is (= path (.getFile file-appender)))
       (is (= context (.getContext file-appender)))
       (is (= true (.isStarted file-appender))))))
+
+(deftest build-loggers
+  (testing "loggers are configured as additive when true is given for :additive?"
+    (let [loggers (subject/build-loggers [{:additive? true
+                                           :appenders []
+                                           :name "loggers-01"}
+                                          {:additive? true
+                                           :appenders []
+                                           :name "loggers-02"}])]
+      (is (= true (every? #(.isAdditive %) loggers)))))
+
+  (testing "loggers default to not additive when no value is given for :additive?"
+    (let [loggers (subject/build-loggers [{:appenders [] :name "loggers-03"}
+                                          {:appenders [] :name "loggers-04"}])]
+      (is (= true (not-any? #(.isAdditive %) loggers)))))
+
+  (testing "loggers are configured with the given context when one is given"
+    (let [context (logger-context)
+          loggers (subject/build-loggers [{:appenders [] :context context :name "loggers-05"}
+                                          {:appenders [] :context context :name "loggers-06"}])]
+      (is (= true (every? #(= context (.getLoggerContext %)) loggers)))))
+
+  (testing "loggers generate new context when no :context is given"
+    (let [loggers (subject/build-loggers [{:appenders [] :name "loggers-07"}
+                                          {:appenders [] :name "loggers-08"}])]
+      (is (= true (every? #(= LoggerContext (class (.getLoggerContext %))) loggers)))))
+
+  (testing "loggers have all appenders detached and stopped when true is given for :detach-and-stop-all-appenders?"
+    (let [appender-a-name "appenders-01"
+          appender-b-name "appenders-02"
+          logger-a-name "loggers-09"
+          logger-b-name "loggers-10"
+
+          [initial-logger-a initial-logger-b]
+          (subject/build-loggers [{:appenders [{:level :info
+                                                :name appender-a-name
+                                                :start? true
+                                                :type :console}]
+                                   :name logger-a-name}
+                                  {:appenders [{:level :info
+                                                :name appender-b-name
+                                                :start? true
+                                                :type :console}]
+                                   :name logger-b-name}])
+          initial-appender-a (.getAppender initial-logger-a appender-a-name)
+          initial-appender-b (.getAppender initial-logger-b appender-b-name)]
+      (is (= true (.isStarted initial-appender-a)))
+      (is (= true (.isStarted initial-appender-b)))
+      (let [[logger-a logger-b] (subject/build-loggers [{:appenders []
+                                                         :detach-and-stop-all-appenders? true
+                                                         :name logger-a-name}
+                                                        {:appenders []
+                                                         :detach-and-stop-all-appenders? true
+                                                         :name logger-b-name}])
+            appender-a (.getAppender logger-a appender-a-name)
+            appender-b (.getAppender logger-b appender-b-name)]
+        (is (= false (.isStarted initial-appender-a)))
+        (is (= false (.isStarted initial-appender-b)))
+        (is (nil? appender-a))
+        (is (nil? appender-b)))))
+
+  (testing "by default, loggers have all appenders detached and stopped when true is given for :detach-and-stop-all-appenders?"
+    (let [appender-a-name "appenders-03"
+          appender-b-name "appenders-04"
+          logger-a-name "loggers-11"
+          logger-b-name "loggers-12"
+
+          [initial-logger-a initial-logger-b]
+          (subject/build-loggers [{:appenders [{:level :info
+                                               :name appender-a-name
+                                               :start? true
+                                               :type :console}]
+                                  :name logger-a-name}
+                                  {:appenders [{:level :info
+                                               :name appender-b-name
+                                               :start? true
+                                               :type :console}]
+                                  :name logger-b-name}])
+          initial-appender-a (.getAppender initial-logger-a appender-a-name)
+          initial-appender-b (.getAppender initial-logger-b appender-b-name)]
+      (is (= true (.isStarted initial-appender-a)))
+      (is (= true (.isStarted initial-appender-b)))
+      (let [[logger-a logger-b] (subject/build-loggers [{:appenders [] :name logger-a-name}
+                                                        {:appenders [] :name logger-b-name}])
+            appender-a (.getAppender logger-a appender-a-name)
+            appender-b (.getAppender logger-b appender-b-name)]
+        (is (= false (.isStarted initial-appender-a)))
+        (is (= false (.isStarted initial-appender-b)))
+        (is (nil? appender-a))
+        (is (nil? appender-b)))))
+
+  (testing "loggers do not have all appenders detached and stopped when false is given for :detach-and-stop-all-appenders?"
+    (let [appender-a-name "appenders-05"
+          appender-b-name "appenders-06"
+          logger-a-name "loggers-13"
+          logger-b-name "loggers-14"
+
+          [initial-logger-a initial-logger-b]
+          (subject/build-loggers [{:appenders [{:level :info
+                                                :name appender-a-name
+                                                :start? true
+                                                :type :console}]
+                                   :name logger-a-name}
+                                  {:appenders [{:level :info
+                                                :name appender-b-name
+                                                :start? true
+                                                :type :console}]
+                                   :name logger-b-name}])
+
+          initial-appender-a (.getAppender initial-logger-a appender-a-name)
+          initial-appender-b (.getAppender initial-logger-b appender-b-name)]
+      (is (= true (.isStarted initial-appender-a)))
+      (is (= true (.isStarted initial-appender-b)))
+      (let [[logger-a logger-b] (subject/build-loggers [{:appenders []
+                                                         :detach-and-stop-all-appenders? false
+                                                         :name logger-a-name}
+                                                        {:appenders []
+                                                         :detach-and-stop-all-appenders? false
+                                                         :name logger-b-name}])
+            appender-a (.getAppender logger-a appender-a-name)
+            appender-b (.getAppender logger-b appender-b-name)]
+        (is (= true (.isStarted initial-appender-a)))
+        (is (= initial-appender-a appender-a))
+        (is (= true (.isStarted initial-appender-b)))
+        (is (= initial-appender-b appender-b)))))
+
+  (testing "loggers are configured with specified :level when keyword is given"
+    (let [loggers (subject/build-loggers [{:appenders [] :level :info :name "loggers-15"}
+                                          {:appenders [] :level :info :name "loggers-16"}])]
+      (is (= true (every? #(= Level/INFO (.getLevel %)) loggers)))))
+
+  (testing "loggers are configured with specified :level when ch.qos.logback.classic.Level constant is given"
+    (let [loggers (subject/build-loggers [{:appenders [] :level Level/INFO :name "loggers-17"}
+                                          {:appenders [] :level Level/INFO :name "loggers-18"}])]
+      (is (= true (every? #(= Level/INFO (.getLevel %)) loggers)))))
+
+  (testing "loggers assume level of INFO when nil is given for :level"
+    (let [loggers (subject/build-loggers [{:appenders [] :level nil :name "loggers-17"}
+                                          {:appenders [] :level nil :name "loggers-18"}])]
+      (is (= true (every? #(= Level/INFO (.getLevel %)) loggers)))))
+
+  (testing "loggers are configured with the specified :appenders"
+    (let [console-appender-a-name "appenders-07"
+          console-appender-b-name "appenders-08"
+          file-appender-a-name "appenders-09"
+          file-appender-b-name "appenders-10"
+          path-a "/tmp/loggers-19"
+          path-b "/tmp/loggers-20"
+          context-a (logger-context)
+          context-b (logger-context)
+          [logger-a logger-b] (subject/build-loggers [{:additive? true
+                                                       :appenders [{:level :info
+                                                                    :name console-appender-a-name
+                                                                    :start? true
+                                                                    :type :console}
+                                                                   {:level :info
+                                                                    :name file-appender-a-name
+                                                                    :path path-a
+                                                                    :start? true
+                                                                    :type :file}]
+                                                       :context context-a
+                                                       :name "logger-19"}
+                                                      {:additive? true
+                                                       :appenders [{:level :info
+                                                                    :name console-appender-b-name
+                                                                    :start? true
+                                                                    :type :console}
+                                                                   {:level :info
+                                                                    :name file-appender-b-name
+                                                                    :path path-b
+                                                                    :start? true
+                                                                    :type :file}]
+                                                       :context context-b
+                                                       :name "logger-20"}])
+          console-appender-a (.getAppender logger-a console-appender-a-name)
+          file-appender-a (.getAppender logger-a file-appender-a-name)
+          console-appender-b (.getAppender logger-b console-appender-b-name)
+          file-appender-b (.getAppender logger-b file-appender-b-name)]
+      (is (= console-appender-a-name (.getName console-appender-a)))
+      (is (= ConsoleAppender (class console-appender-a)))
+      (is (= context-a (.getContext console-appender-a)))
+      (is (= true (.isStarted console-appender-a)))
+      (is (= file-appender-a-name (.getName file-appender-a)))
+      (is (= FileAppender (class file-appender-a)))
+      (is (= path-a (.getFile file-appender-a)))
+      (is (= context-a (.getContext file-appender-a)))
+      (is (= true (.isStarted file-appender-a)))
+
+      (is (= console-appender-b-name (.getName console-appender-b)))
+      (is (= ConsoleAppender (class console-appender-b)))
+      (is (= context-b (.getContext console-appender-b)))
+      (is (= true (.isStarted console-appender-b)))
+      (is (= file-appender-b-name (.getName file-appender-b)))
+      (is (= FileAppender (class file-appender-b)))
+      (is (= path-b (.getFile file-appender-b)))
+      (is (= context-b (.getContext file-appender-b)))
+      (is (= true (.isStarted file-appender-b))))))

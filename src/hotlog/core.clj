@@ -113,3 +113,10 @@
       (let [appender (build-appender (assoc appender-config :context context))]
         (.addAppender logger appender)))
     logger))
+
+(defn build-loggers
+  "Build many loggers with a single call. See build-logger for the available configuration options."
+  [configs]
+  (->> configs
+       (map build-logger)
+       doall))
