@@ -35,8 +35,9 @@
     (trace [this _] nil)
     (warn [this _] nil)))
 
-(defn simple-encoder-factory [{:keys [context start?]
-                               :or {start? true}}]
+(defn simple-encoder-factory
+  "A simple Encoder factory function that yields a PatternLayoutEncoder with a prespecified pattern."
+  [{:keys [context start?] :or {start? true}}]
   (let [encoder (doto (PatternLayoutEncoder.)
                       (.setContext context)
                       (.setPattern "%date %level %logger [%thread]: %msg%n"))]
@@ -44,7 +45,9 @@
       (.start encoder))
     encoder))
 
-(defn threshold-filter [{:keys [level start?]
+(defn threshold-filter
+  "Constructs a ThresholdFilter from the given configuration."
+  [{:keys [level start?]
                          :or {start? true}}]
   (let [filter-level (if (keyword? level)
                        (level threshold-filter-levels)
@@ -55,7 +58,9 @@
       (.start threshold-filter*))
     threshold-filter*))
 
-(defmulti build-appender (fn [config] (:type config)))
+(defmulti build-appender
+  "Construct an Appender of the specified :type from the given configuration."
+  (fn [config] (:type config)))
 
 (defmethod build-appender :console [{:keys [context encoder-factory level name start?]
                                      :or {encoder-factory simple-encoder-factory
@@ -88,11 +93,13 @@
       (.start appender))
     appender))
 
-(defn build-logger [{:keys [additive? appenders context detach-and-stop-all-appenders? level name]
-                     :or {additive? false
-                          context (LoggerFactory/getILoggerFactory)
-                          detach-and-stop-all-appenders? true
-                          level :info}}]
+(defn build-logger
+  "Create a logger and many of constituents from the provided configuration."
+  [{:keys [additive? appenders context detach-and-stop-all-appenders? level name]
+    :or {additive? false
+         context (LoggerFactory/getILoggerFactory)
+         detach-and-stop-all-appenders? true
+         level :info}}]
   (let [log-level (cond
                    (keyword? level) (level logger-levels)
                    (nil? level) (:info logger-levels)
