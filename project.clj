@@ -10,6 +10,6 @@
                    :plugins      [[lein-auto "0.1.3"]]
                    :source-paths ["src"]}}
   :repl-options {:init-ns hotlog.core}
-  :repositories [["releases" {:url "https://clojars.org"
+  :repositories [["releases" {:url "https://clojars.org/repo"
                               :creds :gpg}]]
   :url "https://github.com/tdg5/hotlog")
