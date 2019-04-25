@@ -1,4 +1,4 @@
-(defproject hotlog "0.1.1"
+(defproject hotlog "0.1.2-SNAPSHOT"
   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]
                  [org.clojure/clojure "1.10.0"]
                  [org.slf4j/slf4j-api "1.7.26"]]
