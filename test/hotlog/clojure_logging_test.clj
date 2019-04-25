@@ -5,7 +5,7 @@
 
 (deftest clojure.logging
   (testing "using hotlog logger via clojure.tools.logging/log macro"
-    (let [logger-name (str *ns*)
+    (let [logger-name "hotlog.clojure-logging-test"
           hotlog-logger (subject/build-logger {:additive? false
                                                :appenders [{:level :debug :type :console}]
                                                :detach-and-stop-all-appenders? true
